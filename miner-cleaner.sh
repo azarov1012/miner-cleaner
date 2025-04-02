@@ -26,23 +26,27 @@ for name in chrome.php 1.php shell.php mail.php post.php wp-ajax.php kdevtmpfsi 
     done
 done
 
-### Удаление только подозрительных файлов за последние 7 дней в безопасных директориях ###
+### Удаление новых .php/.sh/.bin файлов за последнюю неделю в безопасных папках ###
 echo "[*] Проверка /uploads, /tmp, /cache на свежие вредоносные .php..."
 find /home/*/public_html/wp-content/uploads \
      /home/*/public_html/wp-content/cache \
      /home/*/public_html/wp-content/tmp \
-     -type f -name "*.php" -mtime -7 2>/dev/null | while read f; do
+     -type f \( -name "*.php" -o -name "*.sh" -o -name "*.bin" \) -mtime -7 2>/dev/null | while read f; do
     echo "[!] Подозрительный свежий файл: $f"
     rm -f "$f"
 done
 
 ### Поиск вредоносного содержимого в .php ###
 echo "[*] Поиск вредоносного кода в файлах..."
-find /home/*/public_html -type f -name "*.php" 2>/dev/null | while read file; do
+find /home/*/public_html/wp-content/uploads \
+     /home/*/public_html/wp-content/cache \
+     /home/*/public_html/wp-content/tmp \
+     -type f -name "*.php" 2>/dev/null | while read file; do
     if grep -Eiq 'eval\(|base64_decode\(|shell_exec\(|system\(|passthru\(|exec\(|gzinflate\(|str_rot13\(|curl_exec\(' "$file"; then
         echo "[!] Вредоносный код найден в: $file"
         rm -f "$file"
     fi
+    [ -f "$file" ] && [ ! -s "$file" ] && rm -f "$file"
 done
 
 ### Очистка временных директорий ###
